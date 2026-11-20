@@ -1,0 +1,20 @@
+{
+  "name": "@read-frog/definitions",
+  "version": "0.12.0-ahong.0",
+  "private": true,
+  "description": "Local replacement for @read-frog/definitions, generated from SIL ISO 639-3 tables and Unicode CLDR (via Intl). See SOURCES.md.",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "scripts": {
+    "generate": "node scripts/generate-languages.mjs ../../upstream/read-frog",
+    "test": "node --test \"test/*.test.ts\""
+  }
+}

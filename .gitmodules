@@ -1,0 +1,3 @@
+[submodule "upstream/read-frog"]
+	path = upstream/read-frog
+	url = https://github.com/mengxi-ream/read-frog.git

@@ -1,0 +1,60 @@
+洪译（工作名，uTools 插件）
+==========================
+
+本插件基于开源项目 Read Frog 修改而成。
+
+  上游项目：Read Frog
+  上游地址：https://github.com/mengxi-ream/read-frog
+  上游版本：commit 96083134b111e56762f578b143bcd48e85058ba3（v1.55.0）
+  上游许可：GNU General Public License v3.0（GPL-3.0）
+
+上游版权：上游根目录 LICENSE 是 GPL-3.0 全文，README.md 写明 "ReadFrog is dual-licensed
+under GPLv3 and a commercial license"，CONTRIBUTING.md 写明贡献同时授予 "a separate
+commercial license granted by FEELIO TECHNOLOGIES LTD."；上游 LICENSE、README.md、
+package.json 中没有单独的版权声明行。上游代码的版权归 Read Frog 的作者与贡献者
+（mengxi-ream/read-frog 仓库的贡献者，商业许可方为 FEELIO TECHNOLOGIES LTD.）所有。
+上游源码文件中已有的版权与许可声明原样保留。
+
+本插件整体以 GPL-3.0 发布，许可全文见同目录 LICENSE。本插件不提供任何担保，
+详见 LICENSE 第 15、16 条。对应源码：插件「关于」页和插件市场描述页给出与该版本
+对应的源码仓库 tag 链接。
+
+名称与商标
+----------
+本插件不使用 Read Frog、陆读的名称、logo 或其他品牌标识，也不打包上游 assets/ 目录中的
+品牌素材。GPL-3.0 不授予商标权。上文对 Read Frog 的提及仅用于说明代码来源，
+不表示本插件由 Read Frog 或 FEELIO TECHNOLOGIES LTD. 开发、认可或提供支持。
+
+不包含的组件
+------------
+本插件的源码和发布包不包含以下包及其任何部分（含源码、编译产物、类型定义）：
+  - @read-frog/layout-engine
+  - @read-frog/definitions（以自建语言表替代，不复制其源码）
+  - @read-frog/api-contract（相关的 Read Frog 云端功能一并删除）
+发布前用 scripts/audit-dist.mjs 检查发布包中没有这些包名。
+
+修改记录
+--------
+修改自 2026-11-03 起。与上游的差异在 shims/、src/ 和 UPSTREAM.md 的补丁清单里，没有改动 submodule 里的上游文件。修改概要：
+  - 2026-11-03 起：将上游作为 git submodule 引入，用本插件自己的 Vite 配置构建；在构建期
+    把浏览器扩展接口（#imports、@webext-core/messaging、import.meta.env、Hosted AI 状态）
+    替换为 uTools 实现；
+  - 2026-11-03 起：去掉依赖 @read-frog/layout-engine 的自定义 AI 动作布局；以自建语言表
+    替代 @read-frog/definitions；删除 @read-frog/api-contract 及账号、Hosted AI 等
+    Read Frog 云端功能；
+  - 2026-11-03 起：删除 Google、Microsoft 非官方免 key 翻译接口与硬编码 key；新增 utools.ai
+    翻译引擎；新增 preload 网络与本机存储桥接；
+  - 2026-11-03 起：改名、换 logo，不加载外部图标资源。
+  - 2026-11-04 起：DeepL、DeepLX 请求改走 preload 网络桥接；隐藏 Read Frog 托管 AI；去掉
+    朗读（Edge TTS）按钮；设置按钮改为打开插件内设置页；去掉指向 Read Frog 网站的定价、
+    登录与文档链接。
+上游源码不在 submodule 里修改；构建期补丁与模块替换逐项登记在 UPSTREAM.md 的补丁清单中。
+
+第三方组件
+----------
+本插件打包的第三方 npm 依赖各自保留其原有许可。依赖名称、版本与许可清单由
+scripts/audit-dist.mjs 根据 package-lock.json 生成，写在 reports/dist-licenses.json；
+各依赖的许可原文见其包内的 LICENSE 文件。上游源码中内嵌的第三方片段
+（如 Tabler Icons，MIT）保留原有声明。
+
+本文件是工程侧的来源与许可说明，不构成法律意见。

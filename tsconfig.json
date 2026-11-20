@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "types": ["utools-api-types", "vite/client", "@modyfi/vite-plugin-yaml/modules"],
+    "paths": {
+      "@/*": ["./upstream/read-frog/src/*"],
+      "#imports": ["./shims/wxt-imports/index.ts"],
+      "#i18n": ["./shims/wxt-i18n.d.ts"],
+      "@webext-core/messaging": ["./shims/webext-messaging.ts"],
+      "@iconify/react": ["./shims/iconify-react.tsx"],
+      "@read-frog/definitions": ["./shims/read-frog-definitions/index.ts"]
+    }
+  },
+  "include": ["src", "shims", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "upstream", "shims/read-frog-definitions/test", "src/**/__tests__", "src/**/*.test.ts"]
+}

@@ -1,0 +1,13 @@
+{
+  // 只给 `npm run typecheck`（scripts/typecheck.mjs）用：在 tsconfig.json 基础上加 Node 类型并纳入测试文件。
+  // 应用代码（tsconfig.json）不带 Node 全局类型，避免浏览器代码误用 Node API 而类型检查不报。
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["utools-api-types", "vite/client", "@modyfi/vite-plugin-yaml/modules", "node"],
+    // 测试直接加载 public/preload/*.js（CommonJS，无 .d.ts）：按 JS 推断类型，但不检查 JS 本身。
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": ["src", "shims", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "upstream", "shims/read-frog-definitions/test"]
+}

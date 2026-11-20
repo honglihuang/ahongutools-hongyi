@@ -1,0 +1,95 @@
+{
+  "main": "index.html",
+  "preload": "preload.js",
+  "logo": "logo.png",
+  "development": {
+    "main": "http://localhost:5173"
+  },
+  "features": [
+    {
+      "code": "translate",
+      "description": "多引擎翻译，子输入框边输边翻；搜索框直接显示译文",
+      "mainPush": true,
+      "cmds": [
+        "翻译",
+        {
+          "type": "over",
+          "label": "翻译",
+          "exclude": "/^[\\d\\s.,:;+\\-*\\/=%()]+$/",
+          "minLength": 1,
+          "maxLength": 10000
+        }
+      ]
+    },
+    {
+      "code": "translate-paste",
+      "description": "翻译选中的文本，预览后回车粘回原应用",
+      "cmds": [
+        {
+          "type": "over",
+          "label": "翻译并粘回",
+          "exclude": "/^[\\d\\s.,:;+\\-*\\/=%()]+$/",
+          "minLength": 1,
+          "maxLength": 5000
+        }
+      ]
+    },
+    {
+      "code": "translate-shot",
+      "description": "截图或图片识别翻译（需要能识别图片的引擎：OpenAI 兼容接口、OpenAI 或 uTools AI 视觉模型）",
+      "cmds": [
+        "截图翻译",
+        {
+          "type": "img",
+          "label": "图片翻译"
+        }
+      ]
+    },
+    {
+      "code": "translate-file",
+      "description": "翻译 txt、md、srt 文件并另存为新文件",
+      "cmds": [
+        {
+          "type": "files",
+          "label": "翻译文件",
+          "fileType": "file",
+          "extensions": [
+            "txt",
+            "md",
+            "srt"
+          ],
+          "minLength": 1,
+          "maxLength": 1
+        }
+      ]
+    },
+    {
+      "code": "settings",
+      "description": "洪译设置：翻译引擎、语言方向、搜索框直出、历史",
+      "cmds": [
+        "洪译设置"
+      ]
+    },
+    {
+      "code": "actions",
+      "description": "对选中文字或输入的文字运行 AI 动作（润色、解释、词典等）",
+      "cmds": [
+        "AI 动作",
+        {
+          "type": "over",
+          "label": "AI 动作",
+          "exclude": "/^[\\d\\s.,:;+\\-*\\/=%()]+$/",
+          "minLength": 1,
+          "maxLength": 10000
+        }
+      ]
+    },
+    {
+      "code": "vocab",
+      "description": "生词本：查看、编辑、导出收藏的生词（只存本机）",
+      "cmds": [
+        "生词本"
+      ]
+    }
+  ]
+}

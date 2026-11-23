@@ -6,7 +6,7 @@ const { URL } = require('node:url')
 
 // 明文 http 只放行本机回环地址（本地模型，如 Ollama）。
 const LOOPBACK_HTTP_HOSTS = new Set(['localhost', '127.0.0.1'])
-const PLACEHOLDER = /\{\{secret:([^}]*)\}\}/g
+const PLACEHOLDER = '{{secret:'
 // 这些头由 preload 自己决定：host 必须跟 URL 一致；content-length 按实际 body 计算；
 // accept-encoding 固定 identity，因为渲染层自己构造的 Response 不会解压。
 const OVERRIDDEN_HEADERS = new Set(['host', 'content-length', 'transfer-encoding', 'accept-encoding'])
@@ -20,53 +20,41 @@ function assertProviderId(providerId) {
 
 /** 解析 URL；协议不允许（只允许 https，以及 http://localhost、http://127.0.0.1）或解析失败时返回 undefined。 */
 function parseAllowedUrl(rawUrl) {
-  if (typeof rawUrl !== 'string') return undefined
+  if (typeof rawUrl !== 'string' || rawUrl.length > 500 || /[\u0000- \u007f\\?#]|%(?:2f|5c|00|25)/i.test(rawUrl)) return undefined
   let url
   try {
     url = new URL(rawUrl)
   } catch {
     return undefined
   }
+  if (url.username || url.password) return undefined
   if (url.protocol === 'https:') return url
   if (url.protocol === 'http:' && LOOPBACK_HTTP_HOSTS.has(url.hostname)) return url
   return undefined
-}
-
-/** baseURL → origin；不允许时抛错。错误信息不带 baseURL 原文，以免用户把 key 误贴进 URL 后被带进日志。 */
-function originOf(baseURL) {
-  const url = parseAllowedUrl(baseURL)
-  if (!url) throw new TypeError('baseURL 必须是 https 地址，或 http://localhost、http://127.0.0.1')
-  return url.origin
 }
 
 function secretRef(providerId) {
   return `{{secret:${providerId}}}`
 }
 
-/**
- * 复制请求头，去掉 OVERRIDDEN_HEADERS，并替换值里的 {{secret:<id>}}。
- * 只有 id 就是本请求的 providerId、该 provider 存了 key、且请求 origin 正是 key 登记的 origin 时才替换；
- * 否则返回 { code, message }，整个请求不发。secret 是 { key, origin } 或 undefined（没存 key）。
- */
-function resolveHeaders(headers, providerId, origin, secret) {
-  const out = {}
+// 只在已核对端点之后，并且只在该引擎预期的认证头内替换完整占位符。
+function resolveHeaders(headers, providerId, access) {
+  const out = Object.create(null)
+  const prefix = access.type === 'deepl' ? 'DeepL-Auth-Key ' : 'Bearer '
   for (const [name, value] of Object.entries(headers)) {
-    if (OVERRIDDEN_HEADERS.has(name.toLowerCase())) continue
-    let failure
-    out[name] = value.replace(PLACEHOLDER, (_, id) => {
-      if (failure) return ''
-      if (id !== providerId) {
-        failure = { code: 'ORIGIN_NOT_ALLOWED', message: `请求头 ${name} 引用了其他 provider 的 key` }
-      } else if (!secret) {
-        failure = { code: 'SECRET_MISSING', message: `provider ${providerId} 没有保存 key` }
-      } else if (secret.origin !== origin) {
-        failure = { code: 'ORIGIN_NOT_ALLOWED', message: `provider ${providerId} 的 key 只允许发往 ${secret.origin}` }
-      }
-      return failure ? '' : secret.key
-    })
-    if (failure) return failure
+    const lower = name.toLowerCase()
+    if (OVERRIDDEN_HEADERS.has(lower)) continue
+    if (!value.includes(PLACEHOLDER)) {
+      out[lower] = value
+      continue
+    }
+    if (lower !== 'authorization' || value !== prefix + secretRef(providerId)) {
+      return { code: 'ORIGIN_NOT_ALLOWED', message: '请求头中的认证占位符不匹配' }
+    }
+    if (!access.key) return { code: 'SECRET_MISSING', message: '请在「洪译设置」保存 API key' }
+    out[lower] = prefix + access.key
   }
   return { headers: out }
 }
 
-module.exports = { assertProviderId, parseAllowedUrl, originOf, secretRef, resolveHeaders }
+module.exports = { assertProviderId, parseAllowedUrl, secretRef, resolveHeaders }

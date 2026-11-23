@@ -1,19 +1,16 @@
 'use strict'
-// 网络请求：只发往 provider 已登记的 origin，在 preload 里把请求头占位符换成真实 key，
+// 网络请求：只向 preload 授权的具体端点发送 POST，在 preload 里替换该引擎的认证占位符，
 // 结果按 head → chunk* → done | error 推给渲染层。不跟随重定向，不打印日志。
 
 const http = require('node:http')
 const https = require('node:https')
-const { assertProviderId, parseAllowedUrl, originOf, resolveHeaders } = require('./policy.js')
-const { createMapFile } = require('./fsutil.js')
+const { assertProviderId, parseAllowedUrl, resolveHeaders } = require('./policy.js')
 
 // 空闲超时：从发起请求到收到响应头、以及两次收到数据之间的最长等待；流式响应只要持续有数据就不会超时。
 const DEFAULT_TIMEOUT_MS = 60_000
 const MAX_TIMER_MS = 2 ** 31 - 1
 const MAX_REQUEST_BYTES = 1024 * 1024
 const MAX_RESPONSE_BYTES = 20 * 1024 * 1024
-// 无 key provider 的登记：{ [providerId]: origin }，每个 provider 一个，再次登记即替换。
-const ORIGINS_FILE = 'net-origins.json'
 
 /** 契约外的调用方式属于代码错误，同步抛 TypeError，不发任何事件。 */
 function assertRequest(req, onEvent) {
@@ -38,32 +35,16 @@ function flattenHeaders(raw) {
 }
 
 /**
- * getDataDir() 返回插件本地数据目录；lookupSecret(providerId) 返回 { key, origin } 或 undefined。
- * 返回值 api 就是 window.services.net。
+ * lookupAccess(providerId) 由 preload 私下读取绑定，不暴露给页面。
  */
-function createNet(getDataDir, lookupSecret) {
-  const origins = createMapFile(getDataDir, ORIGINS_FILE)
+function createNet(lookupAccess) {
   const tasks = new Map() // taskId → 中止该任务的函数
 
-  async function isAllowed(providerId, origin, secret) {
-    if (secret && secret.origin === origin) return true
-    return (await origins.read()).get(providerId) === origin
-  }
-
   const api = {
-    async allowOrigin(providerId, baseURL) {
-      assertProviderId(providerId)
-      const origin = originOf(baseURL)
-      await origins.update((map) => map.set(providerId, origin))
-    },
-    async revoke(providerId) {
-      assertProviderId(providerId)
-      await origins.update((map) => map.delete(providerId))
-    },
     request(req, onEvent) {
       assertRequest(req, onEvent)
       if (tasks.has(req.taskId)) throw new TypeError(`taskId ${req.taskId} 正在进行中`)
-      startTask(req, onEvent)
+      startTask({ ...req, headers: { ...req.headers } }, onEvent)
     },
     cancel(taskId) {
       const abort = tasks.get(taskId)
@@ -103,13 +84,12 @@ function createNet(getDataDir, lookupSecret) {
     tasks.set(taskId, fail)
     ;(async () => {
       const url = parseAllowedUrl(req.url)
-      if (!url) return fail('ORIGIN_NOT_ALLOWED', '只允许 https，或 http://localhost、http://127.0.0.1')
-      const secret = await lookupSecret(providerId)
-      secretKey = secret?.key
-      if (!(await isAllowed(providerId, url.origin, secret))) {
-        return fail('ORIGIN_NOT_ALLOWED', `${url.origin} 没有登记给 provider ${providerId}`)
+      const access = await lookupAccess(providerId)
+      if (req.method !== 'POST' || !url || !access || url.href !== access.endpoint) {
+        return fail('ORIGIN_NOT_ALLOWED', '请求地址未授权；请到「洪译设置」核对并保存引擎')
       }
-      const resolved = resolveHeaders(req.headers, providerId, url.origin, secret)
+      secretKey = access.key
+      const resolved = resolveHeaders(req.headers, providerId, access)
       if (resolved.code) return fail(resolved.code, resolved.message)
       const body = req.body === undefined ? undefined : Buffer.from(req.body, 'utf8')
       if (body && body.length > MAX_REQUEST_BYTES) {
@@ -120,7 +100,7 @@ function createNet(getDataDir, lookupSecret) {
     })().catch((err) => fail('NETWORK', err.message))
 
     function send(url, headers, body) {
-      const options = { method: req.method, headers: { ...headers, 'accept-encoding': 'identity' } }
+      const options = { method: 'POST', headers: { ...headers, 'accept-encoding': 'identity' } }
       if (body) options.headers['content-length'] = String(body.length)
       try {
         clientReq = (url.protocol === 'https:' ? https : http).request(url, options)

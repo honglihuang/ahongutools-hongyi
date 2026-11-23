@@ -4,19 +4,15 @@
 /** API key 的占位符。渲染层永远只拿到它，真实 key 只在 preload 里替换进请求头。 */
 export type SecretRef = `{{secret:${string}}}`
 
-export interface SecretsApi {
-  /** 保存 key，并把 baseURL 的 origin 登记为该 provider 唯一允许携带此 key 的目标。 */
-  set(providerId: string, key: string, baseURL: string): Promise<void>
+export type NetworkEngineType = 'openai-compatible' | 'deepseek' | 'openai' | 'deepl' | 'deeplx' | 'ollama'
+
+export interface EngineAccessApi {
+  /** 保存本机绑定；固定引擎由 preload 选地址，自定义端点需在原生对话框确认。key 留空保留已绑定的 key。 */
+  save(providerId: string, type: NetworkEngineType, baseURL: string, key: string): Promise<{ baseURL: string; hasKey: boolean }>
   has(providerId: string): Promise<boolean>
   remove(providerId: string): Promise<void>
   /** 返回占位符，不返回 key。 */
   ref(providerId: string): SecretRef
-}
-
-export interface NetAllowApi {
-  /** 无 key 的 provider（如自建 DeepLX、本地 Ollama）登记允许访问的 origin。 */
-  allowOrigin(providerId: string, baseURL: string): Promise<void>
-  revoke(providerId: string): Promise<void>
 }
 
 export interface NetRequest {
@@ -44,8 +40,8 @@ export type NetErrorCode =
   | 'TOO_LARGE'
   | 'NETWORK'
 
-export interface NetApi extends NetAllowApi {
-  /** 请求只发往该 providerId 已登记的 origin；同一 taskId 的事件按顺序到达，done/error 之后不再有事件。 */
+export interface NetApi {
+  /** 仅允许向该 providerId 的已授权端点发 POST；done/error 之后不再有事件。 */
   request(req: NetRequest, onEvent: (event: NetEvent) => void): void
   cancel(taskId: string): void
 }
@@ -74,7 +70,7 @@ export interface FilesApi {
 }
 
 export interface HongyiServices {
-  secrets: SecretsApi
+  engines: EngineAccessApi
   net: NetApi
   localStore: LocalStoreApi
   files: FilesApi

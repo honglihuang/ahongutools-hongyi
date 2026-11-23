@@ -38,7 +38,7 @@ export function AboutSection() {
             上游项目：<ExternalLink href={UPSTREAM_URL} />（commit 9608313，v1.55.0）
           </p>
           <ul className="list-disc pl-5">
-            <li>本插件不使用 Read Frog、陆读的名称和 logo；提及 Read Frog 仅用于说明代码来源，不表示由其开发、认可或支持。</li>
+            <li>洪译是独立插件。感谢 Read Frog 作者与贡献者；提及 Read Frog 仅用于说明代码来源，不表示由其开发、认可或支持。</li>
             <li>不包含 Read Frog 的专有或未授权组件；Read Frog 账号与云端功能已删除。</li>
             <li>删除了 Google、Microsoft 非官方免 key 翻译接口；新增 uTools AI 引擎与本机网络、存储桥接。</li>
             <li>第三方依赖各自保留原有许可，详见随插件发布的 NOTICE 与 LICENSE。</li>
@@ -48,7 +48,7 @@ export function AboutSection() {
       <ConfigItem title="API key 存放" orientation="vertical">
         <Note>
           你填写的 API key 以明文保存在本机的插件数据目录里，不随 uTools 同步，也不会在设置页回显；同步的配置里只有占位符。
-          请求只会发往保存 key 时填写的服务地址。key 加密存储会在后续版本提供。
+          每个引擎只向其授权端点发请求。自定义端点首次保存或变更时会显示接收地址，确认后才启用。
         </Note>
       </ConfigItem>
     </ConfigSection>

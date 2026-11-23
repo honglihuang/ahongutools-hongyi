@@ -98,6 +98,12 @@ function createFiles(getUtools = () => globalThis.utools) {
       })
       if (target === undefined || target === null || target === '') return null
       if (typeof target !== 'string') throw new TypeError('保存对话框返回了非字符串路径')
+      // 保留生词本与术语表导出；授权文件使用非导出扩展名 .state。
+      const targetExt = path.extname(target).toLowerCase()
+      if (!targetExt || targetExt !== `.${ext.toLowerCase()}` ||
+          (!ALLOWED_EXTENSIONS.has(targetExt) && targetExt !== '.csv' && targetExt !== '.json')) {
+        throw new Error('请选择与导出格式一致的文件扩展名')
+      }
       if (avoidPath !== undefined && (await isSameFile(target, avoidPath))) {
         throw new Error('不能覆盖原文件，请换一个文件名')
       }

@@ -1,4 +1,4 @@
-// 引擎列表：uTools AI 固定第一个（不可删）；其余可添加、编辑、删除。删除时同时清掉 preload 里的 key 与 origin 登记。
+// 引擎列表：uTools AI 固定第一个（不可删）；其余可添加、编辑、删除。删除时撤销端点授权和 key。
 import { useState } from 'react'
 import {
   AlertDialog,
@@ -91,7 +91,7 @@ export function EnginesSection() {
 
   return (
     <div className="flex w-full flex-col gap-3">
-      <Note>可选引擎都需要你自己的官方 key（DeepL API、OpenAI 兼容接口、DeepSeek 等）；自建 DeepLX 与本机 Ollama 不需要 key。</Note>
+      <Note>OpenAI、DeepSeek 和 DeepL 只连接官方端点。旧版或从其他设备同步过来的引擎需在本机重新保存；如使用 API key，请在保存时重新填写。</Note>
       <DefaultEngineItem rows={rows} choice={choice} onChange={changeChoice} />
       <ul className="flex flex-col divide-y rounded-lg border">
         {rows.map((row) => (

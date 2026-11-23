@@ -123,6 +123,8 @@ export function scanFiles(distDir) {
     if (e.isDir || e.rel.split("/").some((p) => FORBIDDEN_NAMES.has(p))) continue;
     const text = fs.readFileSync(e.abs).toString("latin1");
     for (const f of FORBIDDEN) {
+      // NOTICE 合规声明明确点名未分发的上游包，不是代码引用。
+      if (e.rel === 'NOTICE' && f.rule === '禁用包') continue;
       for (const m of text.matchAll(f.re)) {
         findings.push({ rule: f.rule, file: e.rel, loc: lineCol(text, m.index), detail: `${f.label}: ${snippet(m[0])}` });
       }
@@ -268,6 +270,11 @@ export function collectLicenses(rootDir) {
 
 export function checkRelease(distDir) {
   const findings = [];
+  for (const name of ['LICENSE', 'NOTICE']) {
+    const file = path.join(distDir, name);
+    const stat = fs.statSync(file, { throwIfNoEntry: false });
+    if (!stat?.isFile() || !stat.size) findings.push({ rule: '发布缺少许可文件', file: name, loc: '', detail: '文件缺失或为空' });
+  }
   const pj = path.join(distDir, "plugin.json");
   if (fs.existsSync(pj)) {
     try {

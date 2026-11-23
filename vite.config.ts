@@ -9,6 +9,7 @@ import ViteYaml from '@modyfi/vite-plugin-yaml'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 import { stripFeatures } from './scripts/release-manifest.mjs'
+import { writeReleaseLicenses } from './scripts/release-licenses.mjs'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const upstreamSrc = path.join(root, 'upstream/read-frog/src')
@@ -232,7 +233,10 @@ function stripDevelopmentManifest(): Plugin {
       const manifest = JSON.parse(await readFile(file, 'utf8'))
       delete manifest.development
       // 发布构建（scripts/build-release.mjs 设 VITE_HONGYI_RELEASE=1）：去掉只给开发用的「洪译实测」入口。
-      if (process.env.VITE_HONGYI_RELEASE === '1') manifest.features = stripFeatures(manifest, ['probe']).features
+      if (process.env.VITE_HONGYI_RELEASE === '1') {
+        manifest.features = stripFeatures(manifest, ['probe']).features
+        writeReleaseLicenses(root, options.dir ?? 'dist')
+      }
       await writeFile(file, `${JSON.stringify(manifest, null, 2)}\n`)
     },
   }

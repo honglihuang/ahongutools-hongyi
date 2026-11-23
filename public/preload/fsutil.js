@@ -6,6 +6,8 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const fsp = fs.promises
+// preload 与页面可能共享全局；不从页面重新取 JSON 编解码函数。
+const { parse, stringify } = JSON
 
 /** 读 JSON 文件；文件不存在返回 undefined。 */
 async function readJson(file) {
@@ -17,16 +19,16 @@ async function readJson(file) {
     throw err
   }
   try {
-    return JSON.parse(text)
+    return parse(text)
   } catch {
-    // JSON.parse 的错误信息会带一段原文；secrets.json 的原文就是 key，所以换成不带内容的错误。
+    // JSON.parse 的错误可能包含存储原文（包括 key），不要把原文带进报错。
     throw new Error(`${path.basename(file)} 不是合法的 JSON`)
   }
 }
 
 /** 先写同目录临时文件并 fsync，再 rename 覆盖目标；失败时删掉临时文件，目标保持原样。 */
 async function writeJsonAtomic(file, data, mode = 0o666) {
-  const text = JSON.stringify(data)
+  const text = stringify(data)
   if (typeof text !== 'string') throw new TypeError('值无法序列化为 JSON（undefined、函数或 symbol）')
   await fsp.mkdir(path.dirname(file), { recursive: true })
   const tmp = `${file}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`

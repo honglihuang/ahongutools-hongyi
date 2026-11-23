@@ -1,4 +1,4 @@
-// 引擎列表的读写：上游配置经 writeConfigAtom 写（同一条 configSchema 校验与 secret-guard），key 经 logic.ts 进 secrets。
+// 引擎列表经 writeConfigAtom 写入同步配置；端点授权和 key 单独存放在 preload 管理的本机文件。
 import type { Config } from '@/types/config/config'
 import type { ProviderConfig } from '@/types/config/provider'
 import { useAtomValue, useSetAtom } from 'jotai'
@@ -7,7 +7,6 @@ import { configFieldsAtomMap, writeConfigAtom } from '@/utils/atoms/config'
 import {
   computeLanguageDetectionFallbackAfterDeletion,
   computeProviderFallbacksAfterDeletion,
-  computeSelectionToolbarCustomActionFallbacksAfterDeletion,
 } from '@/utils/config/helpers'
 import { buildFeatureProviderPatch } from '@/utils/constants/feature-providers'
 // 直接取适配层常量：src/ 下的 import 不经过 vite 的上游整模块替换，不能用上游 useHostedAiStatus。
@@ -23,8 +22,15 @@ function deletionPatch(current: Config, id: string): Partial<Config> {
   const patch: Partial<Config> = buildFeatureProviderPatch(computeProviderFallbacksAfterDeletion(id, current, remaining, status))
   const detection = computeLanguageDetectionFallbackAfterDeletion(id, current, remaining, status)
   if (detection) patch.languageDetection = { ...current.languageDetection, providerId: detection }
-  const toolbar = computeSelectionToolbarCustomActionFallbacksAfterDeletion(id, current, remaining, status)
-  if (toolbar) patch.selectionToolbar = toolbar
+  // 洪译只运行自己的纯文本动作；不实例化上游需要专有布局的预设。
+  const { selectionToolbar } = current
+  if (selectionToolbar.customActions.some((action) => action.providerId === id)) {
+    patch.selectionToolbar = {
+      ...selectionToolbar,
+      customActions: selectionToolbar.customActions.map((action) =>
+        action.providerId === id ? { ...action, providerId: UTOOLS_AI_PROVIDER_ID } : action),
+    }
+  }
   return { ...patch, providersConfig: remaining }
 }
 
@@ -39,7 +45,7 @@ export function useEngines() {
   const ids = rows.map((r) => r.id).join('\n')
   const refreshKeys = useCallback(async () => {
     const list = ids ? ids.split('\n') : []
-    const has = await Promise.all(list.map((id) => window.services.secrets.has(id)))
+    const has = await Promise.all(list.map((id) => window.services.engines.has(id)))
     setKeyStatus(Object.fromEntries(list.map((id, i) => [id, has[i]!])))
   }, [ids])
   useEffect(() => {

@@ -1,4 +1,4 @@
-// 单个引擎的编辑表单：名称、服务地址、API key（只写不读）、模型。保存时 key 经 secrets.set，配置里只存占位符。
+// 单个引擎的编辑表单；端点和 key 由 preload 保存，配置里只存占位符。
 import { useState } from 'react'
 import { Button } from '@/components/ui/base-ui/button'
 import { Input } from '@/components/ui/base-ui/input'
@@ -49,8 +49,8 @@ export function EngineForm({ row, type, isNew, hasKey, otherNames, onSaved, onCa
       <Field label="名称" error={errors.name}>
         <Input value={draft.name} onChange={set('name')} />
       </Field>
-      {!meta.fixedBaseURL && (
-        <Field label="服务地址" error={errors.baseURL} hint="https 地址，或本机的 http://localhost、http://127.0.0.1；暂不支持局域网 http 地址">
+      {!meta.fixedEndpoint && (
+        <Field label="服务地址" error={errors.baseURL} hint="HTTPS 或本机回环 HTTP；首次使用或更改地址需确认实际收件端点。">
           <Input value={draft.baseURL} onChange={set('baseURL')} placeholder={PROVIDER_URL_PLACEHOLDERS[type]?.replace('/{{apiKey}}', '')} />
         </Field>
       )}
@@ -58,7 +58,7 @@ export function EngineForm({ row, type, isNew, hasKey, otherNames, onSaved, onCa
         <Field
           label={`API key（${hasKey ? '已保存' : '未设置'}）`}
           error={errors.key}
-          hint={meta.fixedBaseURL ? '免费版 key 以 :fx 结尾，会自动使用免费版地址' : KEY_HINT[meta.keyMode]}
+          hint={type === 'deepl' ? '免费版 key 以 :fx 结尾，会自动使用免费版地址' : KEY_HINT[meta.keyMode]}
         >
           <Input
             type="password"
